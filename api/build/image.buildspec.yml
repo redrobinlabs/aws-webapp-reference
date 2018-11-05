@@ -1,0 +1,27 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
+      - REPOSITORY_URI=<YourAWSAccountID>.dkr.ecr.us-east-1.amazonaws.com/yourecrreponame
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - cd api
+      - docker build -t $REPOSITORY_URI:latest -f ./Dockerfile .
+      - echo Build completed on `date`
+  post_build:
+    commands:
+      - echo Pushing the Docker images...
+      - docker push $REPOSITORY_URI:latest
+      - echo Writing image definitions file...
+      - IMAGE_ID=$(docker inspect --format='{{index .RepoDigests 0}}' $REPOSITORY_URI:latest)
+      - echo Using $IMAGE_ID for image params file
+      - printf '{"image":"%s"}' $IMAGE_ID > params.json
+artifacts:
+    files:
+      - '**/*'

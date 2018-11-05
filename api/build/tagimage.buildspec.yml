@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Installing JQ for easy JSON parsing
+      - add-apt-repository ppa:eugenesan/ppa
+      - apt update
+      - apt-get install jq -y
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
+      - REPO=<YourAWSAccountID>.dkr.ecr.us-east-1.amazonaws.com/yourecrreponame
+      - TAGGEDIMAGE=$(cat api/params.json | jq -r '.image')
+  build:
+    commands:
+      - echo "Tagging docker image \"${TAGGEDIMAGE}\" with \"${ENVIRONMENT}\""
+      - docker pull $TAGGEDIMAGE
+      - docker tag $TAGGEDIMAGE $REPO:$ENVIRONMENT
+      - docker push $REPO:$ENVIRONMENT
